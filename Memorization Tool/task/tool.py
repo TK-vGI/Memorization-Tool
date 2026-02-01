@@ -50,6 +50,39 @@ def add_flashcard():
     session.commit()
     print()
 
+def update_flashcard(card):
+    while True:
+        print('press "d" to delete the flashcard:')
+        print('press "e" to edit the flashcard:')
+        choice = input().strip()
+
+        if choice == "d":
+            session.delete(card)
+            session.commit()
+            return "deleted"
+
+        elif choice == "e":
+            # Edit question
+            print(f"\ncurrent question: {card.question}")
+            print("please write a new question:")
+            new_q = input().strip()
+            if new_q:
+                card.question = new_q
+
+            # Edit answer
+            print(f"\ncurrent answer: {card.answer}")
+            print("please write a new answer:")
+            new_a = input().strip()
+            if new_a:
+                card.answer = new_a
+
+            session.commit()
+            print()
+            return "edited"
+
+        else:
+            print(f"{choice} is not an option")
+
 
 def add_submenu():
     while True:
@@ -75,7 +108,7 @@ def practice_flashcards():
     print()
     for card in cards:
         print(f"Question: {card.question}")
-        print('Please press "y" to see the answer or press "n" to skip:')
+        print('press "y" to see the answer:\npress "n" to skip:\npress "u" to update:')
 
         while True:
             choice = user_input().lower()
@@ -84,6 +117,9 @@ def practice_flashcards():
                 break
             elif choice == "n":
                 print()
+                break
+            elif choice == "u":
+                update_flashcard(card)
                 break
             else:
                 print()
