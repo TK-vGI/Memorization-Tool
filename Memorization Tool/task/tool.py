@@ -5,12 +5,15 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 engine = create_engine('sqlite:///flashcard.db?check_same_thread=False')
 Base = declarative_base()
 
+
 class Flashcard(Base):
     __tablename__ = "flashcards"
 
     id = Column(Integer, primary_key=True)
     question = Column(String)
     answer = Column(String)
+    box = Column(Integer, default=1)
+
 
 Base.metadata.create_all(engine)
 
@@ -45,10 +48,11 @@ def add_flashcard():
         if a:
             break
 
-    new_card = Flashcard(question=q, answer=a)
+    new_card = Flashcard(question=q, answer=a, box=1)
     session.add(new_card)
     session.commit()
     print()
+
 
 def update_flashcard(card):
     while True:
@@ -84,6 +88,33 @@ def update_flashcard(card):
             print(f"{choice} is not an option")
 
 
+def box_function(card):
+    while True:
+        print('press "y" if your answer is correct:')
+        print('press "n" if your answer is wrong:')
+        choice = input().strip().lower()
+
+        if choice == "y":
+            if card.box == 3:
+                session.delete(card)
+                session.commit()
+                return "deleted"
+            else:
+                card.box += 1
+                session.commit()
+                return "updated"
+
+        elif choice == "n":
+            # move card to box 1
+            card.box = 1
+            session.commit()
+            print()
+            return "updated"
+
+        else:
+            print(f"{choice} is not an option")
+
+
 def add_submenu():
     while True:
         print(ADD_SUBMENU)
@@ -107,19 +138,29 @@ def practice_flashcards():
 
     print()
     for card in cards:
-        print(f"Question: {card.question}")
-        print('press "y" to see the answer:\npress "n" to skip:\npress "u" to update:')
+        # Card might have been deleted earlier in this session
+        if session.get(Flashcard, card.id) is None:
+            continue
 
         while True:
-            choice = user_input().lower()
+            print(f"\nQuestion: {card.question}")
+            print('press "y" to see the answer:')
+            print('press "n" to skip:')
+            print('press "u" to update:')
+            choice = input().strip().lower()
+
             if choice == "y":
                 print(f"\nAnswer: {card.answer}\n")
+                box_function(card)
+                print()
                 break
             elif choice == "n":
+                # Skip, do not change box, no learning menu
                 print()
                 break
             elif choice == "u":
                 update_flashcard(card)
+                # Edited: go back to question menu for this card
                 break
             else:
                 print()
