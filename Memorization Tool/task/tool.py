@@ -1,4 +1,21 @@
-flashcards = []   # list of {"question": "...", "answer": "..."}
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+# Database setup
+engine = create_engine('sqlite:///flashcard.db?check_same_thread=False')
+Base = declarative_base()
+
+class Flashcard(Base):
+    __tablename__ = "flashcards"
+
+    id = Column(Integer, primary_key=True)
+    question = Column(String)
+    answer = Column(String)
+
+Base.metadata.create_all(engine)
+
+Session = sessionmaker(bind=engine)
+session = Session()
 
 MAIN_MENU = """1. Add flashcards
 2. Practice flashcards
@@ -28,7 +45,9 @@ def add_flashcard():
         if a:
             break
 
-    flashcards.append({"question": q, "answer": a})
+    new_card = Flashcard(question=q, answer=a)
+    session.add(new_card)
+    session.commit()
     print()
 
 
@@ -48,19 +67,20 @@ def add_submenu():
 
 
 def practice_flashcards():
-    if not flashcards:
+    cards = session.query(Flashcard).all()
+    if not cards:
         print("\nThere is no flashcard to practice!\n")
         return
 
     print()
-    for card in flashcards:
-        print(f"Question: {card['question']}")
+    for card in cards:
+        print(f"Question: {card.question}")
         print('Please press "y" to see the answer or press "n" to skip:')
 
         while True:
             choice = user_input().lower()
             if choice == "y":
-                print(f"\nAnswer: {card['answer']}\n")
+                print(f"\nAnswer: {card.answer}\n")
                 break
             elif choice == "n":
                 print()
